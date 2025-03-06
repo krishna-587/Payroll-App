@@ -2,50 +2,59 @@ package com.example.Payroll.App.controller;
 
 import com.example.Payroll.App.model.Employee;
 import com.example.Payroll.App.service.EmployeeService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/employees")
+@RequestMapping("/api/employees")
 public class EmployeeController {
-    private final EmployeeService employeeService;
 
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
+    @Autowired
+    private EmployeeService service;
 
     // Get all employees
     @GetMapping
     public List<Employee> getAllEmployees() {
-        return employeeService.getAllEmployees();
+        return service.getAllEmployees();
     }
 
     // Get employee by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable int id) {
-        Employee employee = employeeService.getEmployeeById(id);
-        return (employee != null) ? ResponseEntity.ok(employee) : ResponseEntity.notFound().build();
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
+        Optional<Employee> employee = service.getEmployeeById(id);
+        return employee.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Add a new employee
+    // Create employee
     @PostMapping
-    public Employee addEmployee(@RequestBody Employee employee) {
-        return employeeService.addEmployee(employee);
+    public Employee createEmployee(@Valid @RequestBody Employee employee) {
+        return service.saveEmployee(employee);
     }
 
-    // Update an employee
+    // Update employee
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable int id, @RequestBody Employee updatedEmployee) {
-        Employee employee = employeeService.updateEmployee(id, updatedEmployee);
-        return (employee != null) ? ResponseEntity.ok(employee) : ResponseEntity.notFound().build();
+    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @Valid @RequestBody Employee updatedEmployee) {
+        Optional<Employee> existingEmployee = service.getEmployeeById(id);
+        if (existingEmployee.isPresent()) {
+            updatedEmployee.setId(id);
+            return ResponseEntity.ok(service.saveEmployee(updatedEmployee));
+        }
+        return ResponseEntity.notFound().build();
     }
 
-    // Delete an employee
+    // Delete employee
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable int id) {
-        return (employeeService.deleteEmployee(id)) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+        Optional<Employee> employee = service.getEmployeeById(id);
+        if (employee.isPresent()) {
+            service.deleteEmployee(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
-

@@ -1,54 +1,31 @@
 package com.example.Payroll.App.service;
 
 import com.example.Payroll.App.model.Employee;
+import com.example.Payroll.App.repository.EmployeeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class EmployeeService {
-    private final List<Employee> employeeList = new ArrayList<>();
-    private int idCounter = 1; // Counter for generating employee IDs
 
-    // Get all employees
+    @Autowired
+    private EmployeeRepository repository;
+
     public List<Employee> getAllEmployees() {
-        return employeeList;
+        return repository.findAll();
     }
 
-    // Get employee by ID
-    public Employee getEmployeeById(int id) {
-        return employeeList.stream()
-                .filter(emp -> emp.getId() == id)
-                .findFirst()
-                .orElse(null);
+    public Optional<Employee> getEmployeeById(Long id) {
+        return repository.findById(id);
     }
 
-    // Add a new employee
-    public Employee addEmployee(Employee employee) {
-        employee.setId(idCounter++); // Assign an ID
-        employeeList.add(employee);
-        return employee;
+    public Employee saveEmployee(Employee employee) {
+        return repository.save(employee);
     }
 
-    // Update an employee
-    public Employee updateEmployee(int id, Employee updatedEmployee) {
-        Optional<Employee> existingEmployeeOpt = employeeList.stream()
-                .filter(emp -> emp.getId() == id)
-                .findFirst();
-
-        if (existingEmployeeOpt.isPresent()) {
-            Employee existingEmployee = existingEmployeeOpt.get();
-            existingEmployee.setName(updatedEmployee.getName());
-            existingEmployee.setSalary(updatedEmployee.getSalary());
-            return existingEmployee;
-        }
-        return null;
-    }
-
-    // Delete an employee
-    public boolean deleteEmployee(int id) {
-        return employeeList.removeIf(emp -> emp.getId() == id);
+    public void deleteEmployee(Long id) {
+        repository.deleteById(id);
     }
 }
